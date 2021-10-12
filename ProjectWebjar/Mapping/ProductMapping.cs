@@ -14,7 +14,8 @@ namespace ProjectWebjar.Mapping
         {
             builder.ToTable("Products");
             builder.HasKey(x => x.Id);
-            
+
+            builder.HasMany(x => x.Comments).WithOne(x => x.Product).HasForeignKey(x => x.ProductId);
         }
     }
 }

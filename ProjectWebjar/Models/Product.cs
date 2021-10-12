@@ -13,5 +13,6 @@ namespace ProjectWebjar.Models
         public string Price { get; set; }
         public bool IsDeleted { get; set; }
 
+        public ICollection<Comment> Comments { get; set; }
     }
 }
