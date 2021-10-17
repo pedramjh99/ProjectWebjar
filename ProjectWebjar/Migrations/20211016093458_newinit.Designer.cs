@@ -9,8 +9,8 @@ using ProjectWebjar.Data;
 namespace ProjectWebjar.Migrations
 {
     [DbContext(typeof(ProjectWebjarContext))]
-    [Migration("20211012060244_Commectinit")]
-    partial class Commectinit
+    [Migration("20211016093458_newinit")]
+    partial class newinit
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -19,6 +19,42 @@ namespace ProjectWebjar.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("ProductVersion", "5.0.10")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+            modelBuilder.Entity("ProjectWebjar.Models.Attribute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Attributes");
+                });
+
+            modelBuilder.Entity("ProjectWebjar.Models.AttributeProduct", b =>
+                {
+                    b.Property<int>("AttributeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Price")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AttributeId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("AttributeProducts");
+                });
 
             modelBuilder.Entity("ProjectWebjar.Models.Comment", b =>
                 {
@@ -59,12 +95,28 @@ namespace ProjectWebjar.Migrations
                     b.Property<string>("PicturePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Price")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("ProjectWebjar.Models.AttributeProduct", b =>
+                {
+                    b.HasOne("ProjectWebjar.Models.Attribute", "Attribute")
+                        .WithMany("AttributeProducts")
+                        .HasForeignKey("AttributeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectWebjar.Models.Product", "Product")
+                        .WithMany("AttributesProducts")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Attribute");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("ProjectWebjar.Models.Comment", b =>
@@ -78,8 +130,15 @@ namespace ProjectWebjar.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ProjectWebjar.Models.Attribute", b =>
+                {
+                    b.Navigation("AttributeProducts");
+                });
+
             modelBuilder.Entity("ProjectWebjar.Models.Product", b =>
                 {
+                    b.Navigation("AttributesProducts");
+
                     b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618

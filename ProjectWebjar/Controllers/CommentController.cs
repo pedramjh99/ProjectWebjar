@@ -1,22 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
 
 namespace ProjectWebjar.Controllers
-{
+{   
     [Route("api/[controller]")]
     [ApiController]
     public class CommentController : ControllerBase
     {
-        private readonly ProjectWebjarContext _db;
+        private readonly ProjectWebjarContext _context;
 
-        public CommentController(ProjectWebjarContext db)
+        public CommentController(ProjectWebjarContext context)
         {
-            _db = db;
+            _context = context;
         }
 
         [HttpPost] //Add Comment for Product
@@ -28,8 +27,8 @@ namespace ProjectWebjar.Controllers
             comment.Name = cmVM.Name;
             comment.Message = cmVM.Message;
             comment.ProductId = cmVM.ProductId;
-            _db.Add(comment);
-            await _db.SaveChangesAsync();
+            _context.Add(comment);
+            await _context.SaveChangesAsync();
             return Ok();
 
         }
@@ -40,7 +39,7 @@ namespace ProjectWebjar.Controllers
         {
          
             var model =new CommentViewModel();
-            var comments = _db.Comments.Select(p => new CommentViewModel()
+            var comments = _context.Comments.Select(p => new CommentViewModel()
             {
                 ProductId = p.ProductId,
                 Message = p.Message,

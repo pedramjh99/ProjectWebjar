@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 
 namespace ProjectWebjar.Models
 {
-    public class ProductViewModel
+    public class ProductViewModel 
     {
         public string Name { get; set; }
         public IFormFile Picture { get; set; }
-        public string Price { get; set; }
-        //public bool IsDeleted { get; set; }
+        public List<AttributeViewModel> TitleAttribute { get; set; }
+        public List<AttributeProductViewModel> ValueAttributeProducts { get; set; }
     }
 }

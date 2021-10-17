@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace ProjectWebjar.Models
+﻿namespace ProjectWebjar.Models
 {
     public class CommentViewModel
     {

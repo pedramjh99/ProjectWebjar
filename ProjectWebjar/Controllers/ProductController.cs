@@ -1,11 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
 
@@ -16,16 +15,18 @@ namespace ProjectWebjar.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IHostingEnvironment _hostingEnv;
-        private readonly ProjectWebjarContext _db;
+        private readonly ProjectWebjarContext _context;
 
-        public ProductController(ProjectWebjarContext db, IHostingEnvironment hostingEnv)
+        public ProductController(ProjectWebjarContext context, IHostingEnvironment hostingEnv)
         {
             _hostingEnv = hostingEnv;
-            _db = db;
+            _context = context;
         }
 
+        #region Post
+
         [HttpPost] //Create Products
-        public async Task<ActionResult> PostProduct([FromForm] ProductViewModel ProductVm)
+        public async Task<ActionResult> PostProduct([FromForm] ProductViewModel ProductVm )
         {
             if (ProductVm.Picture != null)
             {
@@ -39,14 +40,42 @@ namespace ProjectWebjar.Controllers
                     filestream.Flush();
                     var AddressPicture =  "\\uploads\\" + ProductVm.Picture.FileName;
 
-
+                    List<Attribute> attributes = new List<Attribute>();
+                    List<AttributeProduct> attributeProducts = new List<AttributeProduct>();
                     Product product = new Product();
                     product.Name = ProductVm.Name;
-                    product.PicturePath = AddressPicture; 
-                    product.Price = ProductVm.Price;
+                    product.PicturePath = AddressPicture;
                     product.IsDeleted = false;
-                    _db.Add(product);
-                    await _db.SaveChangesAsync();
+
+                    _context.Add(product);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var itemAttribute in ProductVm.TitleAttribute)
+                    {
+                        attributes.Add(new Attribute()
+                        {
+                            Title = itemAttribute.Title,
+                        });
+                    }
+
+                    _context.AddRange(attributes);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
+                    {
+                        var   id = attributes.Max(x => x.Id);
+                        attributeProducts.Add(new AttributeProduct()
+                        {
+                            Value = itemAttributeProduct.Value,
+                            Price = itemAttributeProduct.Price,
+                            InStock = itemAttributeProduct.InStock,
+                            ProductId=product.Id,
+                            AttributeId =id, 
+                        });
+                    }
+                    
+                    _context.AddRange(attributeProducts);
+                    await _context.SaveChangesAsync();
                     return Ok();
                 }
             }
@@ -55,36 +84,48 @@ namespace ProjectWebjar.Controllers
                 return BadRequest();
             }
         }
+        #endregion
+        #region Get
+
+
+
 
         [HttpGet] //Read Products
         public List<Product> GetProduct()
         {
-            var product = _db.Products.Where(x => x.IsDeleted == false)
+            var product = _context.Products.Where(x => x.IsDeleted == false)
                 .Select(x => new Product
                 {
                     Id = x.Id,
                     Name = x.Name,
                     PicturePath = x.PicturePath,
-                    Price = x.Price,
+                    Comments = x.Comments,
+                    AttributesProducts = x.AttributesProducts,
                 });
             return product.ToList();
         }
 
         [HttpGet("{id}")] // Read Products By Id 
-        public ActionResult<Product> GetProductBy(int id)
+        public List<Product> GetProductBy(int id)
         {
-
-            var product = _db.Products.Find(id);
-            if (product.IsDeleted == true)
-            {
-                return NotFound();
-            }
-            return product;
+            var product = _context.Products.Where(x => x.IsDeleted == false &&  x.Id==id)
+                .Select(x => new Product
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    PicturePath = x.PicturePath,
+                    Comments = x.Comments,
+                    AttributesProducts = x.AttributesProducts,
+                    
+                });
+            return product.ToList();
         }
 
-         
+        #endregion
+        #region Put
+
         [HttpPut("{id}")] //Update Products
-        public async Task<ActionResult> Putroduct(int id,[FromForm] ProductViewModel ProductVm )
+        public async Task<ActionResult> PutProduct(int id,[FromForm] ProductViewModel ProductVm )
         {
             if (ProductVm.Picture != null)
             {
@@ -98,7 +139,8 @@ namespace ProjectWebjar.Controllers
                     filestream.Flush();
                     var AddressPicture = "\\uploads\\" + ProductVm.Picture.FileName;
                     
-                    var product = _db.Products.Find(id);
+                    var product = _context.Products.Find(id);
+                  
                     if (id != product.Id)
                     {
                         return BadRequest();
@@ -108,10 +150,36 @@ namespace ProjectWebjar.Controllers
                         
                         product.Name = ProductVm.Name;
                         product.PicturePath = AddressPicture;
-                        product.Price = ProductVm.Price;
                         product.IsDeleted = false;
-                        _db.Update(product);
-                        await _db.SaveChangesAsync();
+                        _context.Update(product);
+                        await _context.SaveChangesAsync();
+
+                        var attributes = _context.Attributes.Find(id);
+                     
+                        foreach (var itemAttribute in ProductVm.TitleAttribute)
+                        {
+
+                            attributes.Title = itemAttribute.Title;
+
+                        }
+
+                        _context.UpdateRange(attributes);
+                        await _context.SaveChangesAsync();
+
+                        var attributeProducts = _context.AttributeProducts.Find(id);
+                        foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
+                        {
+                            var maxidattributes = _context.Attributes.Max(x=>x.Id);
+                            attributeProducts.Value = itemAttributeProduct.Value;
+                            attributeProducts.Price = itemAttributeProduct.Price;
+                            attributeProducts.InStock = itemAttributeProduct.InStock;
+                            attributeProducts.ProductId = product.Id;
+                            attributeProducts.AttributeId = maxidattributes;
+
+                        }
+
+                        _context.UpdateRange(attributeProducts);
+                        await _context.SaveChangesAsync();
                         return Ok();
                     }
                 }
@@ -122,20 +190,27 @@ namespace ProjectWebjar.Controllers
             }
         }
 
+        #endregion
+        #region Delete
+
         
+
+       
         [HttpDelete("{id}")] //Delete products
         public ActionResult<Product> DeleteProduct(int id)
         {
-            var product = _db.Products.Find(id);
+            var product = _context.Products.Find(id);
             if (product.IsDeleted == true)
             {
                 return NotFound();
             }
 
             product.IsDeleted = true;
-            _db.SaveChanges();
+            _context.SaveChanges();
 
             return NoContent();
+
         }
+        #endregion
     }
 }
