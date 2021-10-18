@@ -9,6 +9,7 @@ namespace ProjectWebjar.Models
     {
         public int Id { get; set; }
         public string Title { get; set; }
+
         public ICollection<AttributeProduct> AttributeProducts { get; set; }
     }
 }

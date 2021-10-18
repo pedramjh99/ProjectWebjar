@@ -12,10 +12,8 @@ namespace ProjectWebjar.Models
         public string PicturePath { get; set; }
         public bool IsDeleted { get; set; }
 
+
         public ICollection<Comment> Comments { get; set; }
         public ICollection<AttributeProduct> AttributesProducts { get; set; }
-
-
-
     }
 }

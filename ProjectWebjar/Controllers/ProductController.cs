@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
 
@@ -63,14 +62,14 @@ namespace ProjectWebjar.Controllers
 
                     foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
                     {
-                        var   id = attributes.Max(x => x.Id);
+                        var LastAttributeId = attributes.Max(x => x.Id);
                         attributeProducts.Add(new AttributeProduct()
                         {
                             Value = itemAttributeProduct.Value,
                             Price = itemAttributeProduct.Price,
                             InStock = itemAttributeProduct.InStock,
                             ProductId=product.Id,
-                            AttributeId =id, 
+                            AttributeId = LastAttributeId, 
                         });
                     }
                     
@@ -154,33 +153,43 @@ namespace ProjectWebjar.Controllers
                         _context.Update(product);
                         await _context.SaveChangesAsync();
 
-                        var attributes = _context.Attributes.Find(id);
-                     
+
+                        
+                        List<Attribute> attributes = new List<Attribute>();
+                        
                         foreach (var itemAttribute in ProductVm.TitleAttribute)
                         {
-
-                            attributes.Title = itemAttribute.Title;
-
+                            attributes.Add(new Attribute()
+                            {
+                                Title = itemAttribute.Title,
+                            });
                         }
 
-                        _context.UpdateRange(attributes);
+                        _context.AddRange(attributes);
                         await _context.SaveChangesAsync();
 
-                        var attributeProducts = _context.AttributeProducts.Find(id);
+                        List<AttributeProduct> attributeProducts = new List<AttributeProduct>();
                         foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
                         {
-                            var maxidattributes = _context.Attributes.Max(x=>x.Id);
-                            attributeProducts.Value = itemAttributeProduct.Value;
-                            attributeProducts.Price = itemAttributeProduct.Price;
-                            attributeProducts.InStock = itemAttributeProduct.InStock;
-                            attributeProducts.ProductId = product.Id;
-                            attributeProducts.AttributeId = maxidattributes;
-
+                            var LastAttributeId = attributes.Max(x => x.Id);
+                            attributeProducts.Add(new AttributeProduct()
+                            {
+                                Value = itemAttributeProduct.Value,
+                                Price = itemAttributeProduct.Price,
+                                InStock = itemAttributeProduct.InStock,
+                                ProductId = product.Id,
+                                AttributeId = LastAttributeId,
+                            });
+                            
                         }
-
-                        _context.UpdateRange(attributeProducts);
+                        
+                        var a = _context.AttributeProducts.Where(u => u.ProductId == id).ToList();
+   
+                        _context.RemoveRange(a);
                         await _context.SaveChangesAsync();
-                        return Ok();
+                        _context.AddRange(attributeProducts);
+                        await _context.SaveChangesAsync();
+                        return Ok();  
                     }
                 }
             }
@@ -189,7 +198,6 @@ namespace ProjectWebjar.Controllers
                 return BadRequest();
             }
         }
-
         #endregion
         #region Delete
 
