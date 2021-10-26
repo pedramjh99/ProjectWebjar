@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
 
+
 namespace ProjectWebjar.Controllers
 {
     [Route("api/[controller]")]
@@ -25,8 +26,9 @@ namespace ProjectWebjar.Controllers
         #region Post
 
         [HttpPost] //Create Products
-        public async Task<ActionResult> PostProduct([FromForm] ProductViewModel ProductVm )
+        public async Task<ActionResult> PostProduct([FromForm] ProductViewModel ProductVm)
         {
+            //------------------------------------Picture------------------------------\\
             if (ProductVm.Picture != null)
             {
                 if (!Directory.Exists(_hostingEnv.WebRootPath + "\\uploads\\"))
@@ -37,18 +39,18 @@ namespace ProjectWebjar.Controllers
                 {
                     ProductVm.Picture.CopyTo(filestream);
                     filestream.Flush();
-                    var AddressPicture =  "\\uploads\\" + ProductVm.Picture.FileName;
+                    var AddressPicture = "\\uploads\\" + ProductVm.Picture.FileName;
 
-                    List<Attribute> attributes = new List<Attribute>();
-                    List<AttributeProduct> attributeProducts = new List<AttributeProduct>();
+                    //-------------------------------Add Product With Picture----------------------------\\
                     Product product = new Product();
                     product.Name = ProductVm.Name;
                     product.PicturePath = AddressPicture;
                     product.IsDeleted = false;
-
                     _context.Add(product);
                     await _context.SaveChangesAsync();
 
+                    //-------------------------------Add attribute for Product----------------------------\\
+                    List<Attribute> attributes = new List<Attribute>();
                     foreach (var itemAttribute in ProductVm.TitleAttribute)
                     {
                         attributes.Add(new Attribute()
@@ -56,10 +58,11 @@ namespace ProjectWebjar.Controllers
                             Title = itemAttribute.Title,
                         });
                     }
-
                     _context.AddRange(attributes);
                     await _context.SaveChangesAsync();
 
+                    //------------------------Add Value's and Price of attribute for Product--------------------\\
+                    List<AttributeProduct> attributeProducts = new List<AttributeProduct>();
                     foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
                     {
                         var LastAttributeId = attributes.Max(x => x.Id);
@@ -68,13 +71,13 @@ namespace ProjectWebjar.Controllers
                             Value = itemAttributeProduct.Value,
                             Price = itemAttributeProduct.Price,
                             InStock = itemAttributeProduct.InStock,
-                            ProductId=product.Id,
-                            AttributeId = LastAttributeId, 
+                            ProductId = product.Id,
+                            AttributeId = LastAttributeId,
                         });
                     }
-                    
                     _context.AddRange(attributeProducts);
                     await _context.SaveChangesAsync();
+
                     return Ok();
                 }
             }
@@ -85,9 +88,6 @@ namespace ProjectWebjar.Controllers
         }
         #endregion
         #region Get
-
-
-
 
         [HttpGet] //Read Products
         public List<Product> GetProduct()
@@ -100,14 +100,15 @@ namespace ProjectWebjar.Controllers
                     PicturePath = x.PicturePath,
                     Comments = x.Comments,
                     AttributesProducts = x.AttributesProducts,
-                });
+                });                
             return product.ToList();
+               
         }
 
         [HttpGet("{id}")] // Read Products By Id 
         public List<Product> GetProductBy(int id)
         {
-            var product = _context.Products.Where(x => x.IsDeleted == false &&  x.Id==id)
+            var product = _context.Products.Where(x => x.IsDeleted == false && x.Id == id)
                 .Select(x => new Product
                 {
                     Id = x.Id,
@@ -115,7 +116,7 @@ namespace ProjectWebjar.Controllers
                     PicturePath = x.PicturePath,
                     Comments = x.Comments,
                     AttributesProducts = x.AttributesProducts,
-                    
+
                 });
             return product.ToList();
         }
@@ -124,8 +125,9 @@ namespace ProjectWebjar.Controllers
         #region Put
 
         [HttpPut("{id}")] //Update Products
-        public async Task<ActionResult> PutProduct(int id,[FromForm] ProductViewModel ProductVm )
+        public async Task<ActionResult> PutProduct(int id, [FromForm] ProductViewModel ProductVm)
         {
+            //----------------------------------Picture------------------------------\\
             if (ProductVm.Picture != null)
             {
                 if (!Directory.Exists(_hostingEnv.WebRootPath + "\\uploads\\"))
@@ -137,26 +139,23 @@ namespace ProjectWebjar.Controllers
                     ProductVm.Picture.CopyTo(filestream);
                     filestream.Flush();
                     var AddressPicture = "\\uploads\\" + ProductVm.Picture.FileName;
-                    
+
+                    //----------------------------Find And Update Product----------------------------\\
                     var product = _context.Products.Find(id);
-                  
                     if (id != product.Id)
                     {
                         return BadRequest();
                     }
                     else
                     {
-                        
                         product.Name = ProductVm.Name;
                         product.PicturePath = AddressPicture;
                         product.IsDeleted = false;
                         _context.Update(product);
                         await _context.SaveChangesAsync();
-
-
-                        
+                                                    
+                        //-------------------------Add New Attribute for Product----------------------------\\
                         List<Attribute> attributes = new List<Attribute>();
-                        
                         foreach (var itemAttribute in ProductVm.TitleAttribute)
                         {
                             attributes.Add(new Attribute()
@@ -164,10 +163,10 @@ namespace ProjectWebjar.Controllers
                                 Title = itemAttribute.Title,
                             });
                         }
-
                         _context.AddRange(attributes);
                         await _context.SaveChangesAsync();
 
+                        //-------------------Find valu's and Price of Attribute and replace it---------------------\\
                         List<AttributeProduct> attributeProducts = new List<AttributeProduct>();
                         foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
                         {
@@ -180,16 +179,16 @@ namespace ProjectWebjar.Controllers
                                 ProductId = product.Id,
                                 AttributeId = LastAttributeId,
                             });
-                            
                         }
-                        
+
                         var a = _context.AttributeProducts.Where(u => u.ProductId == id).ToList();
-   
                         _context.RemoveRange(a);
                         await _context.SaveChangesAsync();
+
                         _context.AddRange(attributeProducts);
                         await _context.SaveChangesAsync();
-                        return Ok();  
+
+                        return Ok();
                     }
                 }
             }
@@ -201,9 +200,6 @@ namespace ProjectWebjar.Controllers
         #endregion
         #region Delete
 
-        
-
-       
         [HttpDelete("{id}")] //Delete products
         public ActionResult<Product> DeleteProduct(int id)
         {
@@ -216,9 +212,9 @@ namespace ProjectWebjar.Controllers
             product.IsDeleted = true;
             _context.SaveChanges();
 
-            return NoContent();
-
+            return Ok();
         }
         #endregion
+
     }
 }

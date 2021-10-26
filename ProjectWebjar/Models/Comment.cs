@@ -8,12 +8,6 @@
         public int ProductId { get; set; }
         public Product Product { get; set; }
 
-        public Comment()
-        {
-
-
-        }
-
         public Comment(string name, string message, int productId)
         {
             Name = name;
