@@ -1,8 +1,13 @@
-﻿namespace ProjectWebjar.Models
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using System;
+
+namespace ProjectWebjar.Models
 {
     public class Comment
     {
-        public int Id { get; set; }
+        [BsonId]
+        public Guid Id { get; set; } 
         public string Name { get; set; }
         public string Message { get; set; }
         public int ProductId { get; set; }

@@ -1,21 +1,13 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ProjectWebjar.Data;
-using StackExchange.Redis.Extensions.Newtonsoft;
-using StackExchange.Redis.Extensions.Core.Configuration;
 using StackExchange.Redis;
+using ProjectWebjar.Repository;
 
 namespace ProjectWebjar
 {
@@ -31,19 +23,21 @@ namespace ProjectWebjar
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //redis Configuration
-            services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = "localhost:9191,password=123456";
-                options.InstanceName = "";
-            });
-            //
+            
 
             #region Redis Multiplexer
 
             services.AddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect("localhost:9191,password=123456"));
 
             #endregion
+
+            //redis
+            services.AddStackExchangeRedisCache(option =>
+            {
+                option.Configuration = "localhost:6379";
+            });
+            //
+
 
             services.AddControllersWithViews();
             services.AddMvc();

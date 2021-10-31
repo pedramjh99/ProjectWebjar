@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
-
+using ProjectWebjar.Repository;
 
 namespace ProjectWebjar.Controllers
 {
@@ -92,33 +92,44 @@ namespace ProjectWebjar.Controllers
         [HttpGet] //Read Products
         public List<Product> GetProduct()
         {
-            var product = _context.Products.Where(x => x.IsDeleted == false)
+            CommentRepository comment = new CommentRepository();
+            var products = _context.Products.Where(x => x.IsDeleted == false)
                 .Select(x => new Product
                 {
                     Id = x.Id,
                     Name = x.Name,
                     PicturePath = x.PicturePath,
-                    Comments = x.Comments,
                     AttributesProducts = x.AttributesProducts,
-                });                
-            return product.ToList();
+                }).ToList();
+
+            foreach (var product in products)
+            {
+                product.Comments = comment.GetList(product.Id);
+            }
+            return products;
                
         }
 
         [HttpGet("{id}")] // Read Products By Id 
         public List<Product> GetProductBy(int id)
         {
-            var product = _context.Products.Where(x => x.IsDeleted == false && x.Id == id)
+            CommentRepository comment = new CommentRepository();
+
+            var products = _context.Products.Where(x => x.IsDeleted == false && x.Id == id)
                 .Select(x => new Product
                 {
                     Id = x.Id,
                     Name = x.Name,
                     PicturePath = x.PicturePath,
-                    Comments = x.Comments,
                     AttributesProducts = x.AttributesProducts,
 
-                });
-            return product.ToList();
+                }).ToList();
+            foreach (var product in products)
+            {
+                product.Comments = comment.GetList(product.Id);
+            }
+
+            return products;
         }
 
         #endregion

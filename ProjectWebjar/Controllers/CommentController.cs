@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
-using Newtonsoft.Json;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
-using StackExchange.Redis;
-using StackExchange.Redis.Extensions.Core.Abstractions;
+using ProjectWebjar.Repository;
 
 namespace ProjectWebjar.Controllers
 {
@@ -17,39 +14,92 @@ namespace ProjectWebjar.Controllers
     [ApiController]
     public class CommentController : ControllerBase
     {
-        private readonly ProjectWebjarContext _context;
 
-        public CommentController(ProjectWebjarContext context)
+        private readonly ProjectWebjarContext _context;
+        private readonly IDistributedCache _distributedCache;
+        
+        public CommentController(ProjectWebjarContext context,IDistributedCache distributedCache)
         {
             _context = context;
+            _distributedCache = distributedCache; 
         }
 
-        [HttpPost] //Add Comment for Product
-        
-        public async Task<ActionResult> PostComment(CommentViewModel cmVM)
+        #region SQL DB
+        //----------------------------------------------SQL SERVER--------------------------------------------\\
+        [HttpPost] //Add Comment for Product 
+
+        //public async Task<ActionResult> PostComment(CommentViewModel cmVM)
+        //{
+
+        //    Comment comment = new Comment(cmVM.Name, cmVM.Message, cmVM.ProductId);
+        //    _context.Add(comment);
+        //    await _context.SaveChangesAsync();
+        //    return Ok();
+        //}
+
+        //[HttpGet] //Show Comment 
+
+        //public List<CommentViewModel> GetComment()
+        //{
+
+        //    var model = new CommentViewModel();
+        //    var comments = _context.Comments.Select(p => new CommentViewModel()
+        //    {
+        //        ProductId = p.ProductId,
+        //        Message = p.Message,
+        //        Name = p.Name
+        //    }).ToList();
+
+        //    return comments;
+        //}
+
+        #endregion 
+
+        #region NO SQL DB
+
+        //--------------------------------------NOSQL With Mongo And Redis-----------------------------------\\
+
+
+        [HttpPost] //Add Comment for Product 
+
+        public void AddComment(CommentViewModel cmVM)
         {
 
-            Comment comment = new Comment(cmVM.Name,cmVM.Message,cmVM.ProductId);
-            _context.Add(comment);
-            await _context.SaveChangesAsync();
-            return Ok();
+            CommentRepository comment = new CommentRepository();
+
+            comment.Add(new Comment
+            (
+                cmVM.Name,
+                cmVM.Message,
+                cmVM.ProductId
+            ));
         }
 
-        [HttpGet] //Show Comment
+        [HttpGet] //Show Comment 
 
-        public List<CommentViewModel> GetComment()
+        public List<Comment> GetComment()
         {
+            CommentRepository comment = new CommentRepository();
 
-            var model = new CommentViewModel();
-            var comments = _context.Comments.Select(p => new CommentViewModel()
+            var cmcacheJson =  _distributedCache.GetAsync("CommentRepository").Result;
+            if(cmcacheJson != null)
             {
-                ProductId = p.ProductId,
-                Message = p.Message,
-                Name = p.Name
-            }).ToList();
+                comment = JsonSerializer.Deserialize<CommentRepository>(cmcacheJson);
+            }
+            else
+            {
+                string jsondata = JsonSerializer.Serialize(comment.GetList());
+                byte[] encodedjson = Encoding.UTF8.GetBytes(jsondata);
 
-            return comments;
+                var option = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(24));
+                _distributedCache.SetAsync("Comment",encodedjson,option);
+            }
+
+            return  comment.GetList();
+            
         }
+
+        #endregion
+        
     }
 }
-
