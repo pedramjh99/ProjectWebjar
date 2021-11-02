@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using ProjectWebjar.Data;
 using ProjectWebjar.Models;
 using ProjectWebjar.Repository;
+using Hangfire;
 
 namespace ProjectWebjar.Controllers
 {
@@ -16,11 +17,13 @@ namespace ProjectWebjar.Controllers
     {
         private readonly IHostingEnvironment _hostingEnv;
         private readonly ProjectWebjarContext _context;
+        private readonly IRecurringJobManager _recurringJobManager;
 
-        public ProductController(ProjectWebjarContext context, IHostingEnvironment hostingEnv)
+        public ProductController(ProjectWebjarContext context, IHostingEnvironment hostingEnv, IRecurringJobManager recurringJobManager)
         {
             _hostingEnv = hostingEnv;
             _context = context;
+            _recurringJobManager = recurringJobManager;
         }
 
         #region Post
@@ -40,6 +43,14 @@ namespace ProjectWebjar.Controllers
                     ProductVm.Picture.CopyTo(filestream);
                     filestream.Flush();
                     var AddressPicture = "\\uploads\\" + ProductVm.Picture.FileName;
+                    
+                    
+                    //var sizepic = filestream.Length;
+                    //if(sizepic>100)
+                    //{
+                    //    _recurringJobManager.AddOrUpdate("test", () => System.IO.File.Delete(AddressPicture), Cron.Minutely);
+                        
+                    //}
 
                     //-------------------------------Add Product With Picture----------------------------\\
                     Product product = new Product();
@@ -61,7 +72,7 @@ namespace ProjectWebjar.Controllers
                     _context.AddRange(attributes);
                     await _context.SaveChangesAsync();
 
-                    //------------------------Add Value's and Price of attribute for Product--------------------\\
+                    //------------------------Add Value's and Price of attribute for Product-------------------\\
                     List<AttributeProduct> attributeProducts = new List<AttributeProduct>();
                     foreach (var itemAttributeProduct in ProductVm.ValueAttributeProducts)
                     {
